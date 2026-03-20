@@ -1,0 +1,12 @@
+{
+  "name": "executable-code-block-server",
+  "version": "0.1.0",
+  "description": "Companion WebSocket server for the Logseq Executable Code Block plugin",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

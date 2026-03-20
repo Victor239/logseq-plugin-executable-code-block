@@ -1,0 +1,23 @@
+{
+  "name": "logseq-executable-code-block",
+  "version": "0.1.0",
+  "description": "Execute code blocks directly inside Logseq",
+  "main": "dist/index.html",
+  "author": "",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@logseq/libs": "^0.0.1-alpha.35"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0"
+  },
+  "logseq": {
+    "id": "executable-code-block",
+    "icon": "./logo.svg"
+  }
+}
