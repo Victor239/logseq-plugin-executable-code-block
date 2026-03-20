@@ -106,6 +106,10 @@ The plugin source is in `src/index.ts`. The companion server is in `server/serve
 
 Logseq plugins run in a sandboxed iframe (no direct access to `child_process`). To execute real shell commands, the plugin connects to the companion WebSocket server over `ws://localhost:8765`. When you click ▶, the plugin sends the code to the server, which spawns a shell process and streams stdout/stderr back chunk by chunk. The UI re-renders on each chunk.
 
+## Troubleshooting
+
+`pkill node`, or `pkill -9 node` can be used to kill the Node.js server if your Logseq becomes unresponsive. 
+
 ## License
 
 MIT
