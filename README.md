@@ -2,7 +2,13 @@
 
 A Logseq plugin that lets you run shell code blocks directly from your notes. Write a code block, right-click the bullet, and create a child execution node with a run button and live terminal output.
 
-![Demo: run button with terminal output panel](./logo.svg)
+![A shell code block with the run button and exit 0 output](./assets/screenshot-run.png)
+
+*Running a simple command — click ▶ to execute, output streams in*
+
+![A long-running shell loop with the stop button and live output](./assets/screenshot-stop.png)
+
+*Long-running process — click ■ to stop execution*
 
 ## Features
 
