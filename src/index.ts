@@ -93,10 +93,24 @@ function escapeHtml(text: string): string {
 }
 
 const CODE_BLOCK_REGEX = /^```(?:shell|bash|sh)\r?\n([\s\S]*?)\r?\n```/m
+const SHELL_LANGS = new Set(['shell', 'bash', 'sh'])
 
-function extractCode(content: string): string | null {
+function isDBCodeBlock(block: Record<string, unknown>): boolean {
+  const displayType = String(
+    block[':logseq.property.node/display-type'] ?? ''
+  ).replace(/^:/, '')
+  const lang = String(
+    block[':logseq.property.code/lang'] ?? ''
+  ).toLowerCase()
+  return displayType === 'code' && SHELL_LANGS.has(lang)
+}
+
+function extractCode(content: string, block?: Record<string, unknown>): string | null {
   const match = content.match(CODE_BLOCK_REGEX)
-  return match ? match[1] : null
+  if (match) return match[1]
+  // New DB-style code block: content is raw code, no markdown fences
+  if (block && isDBCodeBlock(block)) return content
+  return null
 }
 
 // ── UI Renderer ───────────────────────────────────────────────────────────────
@@ -293,7 +307,7 @@ async function main(): Promise<void> {
         return
       }
 
-      const code = extractCode(block.content)
+      const code = extractCode(block.content, block as unknown as Record<string, unknown>)
       if (!code) {
         logseq.App.showMsg('No executable code block found in parent', 'warning')
         return
@@ -317,11 +331,13 @@ async function main(): Promise<void> {
   // Context menu: "Create executable code block"
   logseq.Editor.registerBlockContextMenuItem(
     'Create executable code block',
-    async ({ blockId }) => {
-      const block = await logseq.Editor.getBlock(blockId)
+    async (e) => {
+      const uuid = (e as any).uuid ?? (e as any).blockId
+      const block = await logseq.Editor.getBlock(uuid)
       if (!block?.content) return
 
-      const hasCodeBlock = CODE_BLOCK_REGEX.test(block.content)
+      const blockRecord = block as unknown as Record<string, unknown>
+      const hasCodeBlock = CODE_BLOCK_REGEX.test(block.content) || isDBCodeBlock(blockRecord)
       if (!hasCodeBlock) {
         logseq.App.showMsg(
           'This block does not contain a shell/bash/sh code block',
@@ -331,8 +347,8 @@ async function main(): Promise<void> {
       }
 
       await logseq.Editor.insertBlock(
-        blockId,
-        `{{renderer :exec-code-block, ${blockId}}}`,
+        uuid,
+        `{{renderer :exec-code-block, ${uuid}}}`,
         { sibling: false }
       )
     }
