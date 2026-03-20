@@ -22,8 +22,19 @@ wss.on('connection', (ws) => {
       return
     }
 
-    const { id, code } = msg
-    if (!id || typeof code !== 'string') return
+    const { id, type, code } = msg
+    if (!id) return
+
+    // Handle kill request (SIGINT)
+    if (type === 'kill') {
+      const proc = procs.get(id)
+      if (proc) {
+        try { proc.kill('SIGINT') } catch (_) {}
+      }
+      return
+    }
+
+    if (typeof code !== 'string') return
 
     // Kill any existing process for this id
     const existing = procs.get(id)

@@ -119,16 +119,19 @@ function renderExecUI(execId: string): void {
   const s = execState.get(execId)
   if (!s) return
 
-  const btnClass = s.running ? 'ecb-run-btn ecb-running' : 'ecb-run-btn'
-  const btnIcon = s.running ? '■' : '▶'
-  const btnDisabled = s.running ? 'disabled' : ''
+  const running = s.running
+  const btnClass = running ? 'ecb-run-btn ecb-running' : 'ecb-run-btn'
+  const btnIcon = running ? '■' : '▶'
+  const btnHandler = running ? 'stopCodeBlock' : 'runCodeBlock'
+  const btnTitle = running ? 'STOP execution' : 'Run code block'
+  const outId = `ecb-out-${execId}`
 
   let outputContent: string
   if (s.output === '') {
     outputContent = '<span class="ecb-placeholder">─ click ▶ to run ─</span>'
   } else {
     const exitBadge =
-      s.exitCode !== null && !s.running
+      s.exitCode !== null && !running
         ? `<span class="ecb-exit-badge ${s.exitCode === 0 ? 'ecb-exit-ok' : 'ecb-exit-err'}">exit ${s.exitCode}</span>`
         : ''
     outputContent = `${exitBadge}<span class="ecb-text">${escapeHtml(s.output)}</span>`
@@ -142,14 +145,29 @@ function renderExecUI(execId: string): void {
       <div class="ecb-container">
         <button
           class="${btnClass}"
-          data-on-click="runCodeBlock"
+          data-on-click="${btnHandler}"
           data-exec-id="${execId}"
           data-parent-uuid="${s.parentUuid}"
-          ${btnDisabled}
-          title="Run code block"
+          title="${btnTitle}"
         >${btnIcon}</button>
-        <div class="ecb-output">${outputContent}</div>
+        <div class="ecb-output" id="${outId}">${outputContent}</div>
       </div>
+      <script>
+      (function() {
+        var out = document.getElementById('${outId}');
+        if (!out) return;
+        window.__ecbScroll = window.__ecbScroll || {};
+        if (window.__ecbScroll['${execId}'] !== false) {
+          out.scrollTop = out.scrollHeight;
+        }
+        if (out.__ecbListener) return;
+        out.__ecbListener = true;
+        out.addEventListener('scroll', function() {
+          window.__ecbScroll['${execId}'] =
+            out.scrollTop + out.clientHeight >= out.scrollHeight - 10;
+        }, { passive: true });
+      })();
+      <\/script>
     `,
   })
 }
@@ -220,7 +238,12 @@ const STYLES = `
   .ecb-run-btn.ecb-running {
     background: #6c757d;
     animation: ecb-pulse 1.2s infinite;
-    cursor: not-allowed;
+    cursor: pointer;
+  }
+
+  .ecb-run-btn.ecb-running:hover {
+    background: #c0392b;
+    animation: none;
   }
 
   .ecb-run-btn.ecb-error {
@@ -296,6 +319,16 @@ async function main(): Promise<void> {
 
   // Register model (click handlers)
   logseq.provideModel({
+    async stopCodeBlock(e: { dataset: { execId: string } }) {
+      const { execId } = e.dataset
+      const s = execState.get(execId)
+      if (!s || !s.running) return
+      try {
+        const socket = await connectWS()
+        socket.send(JSON.stringify({ id: execId, type: 'kill' }))
+      } catch (_) {}
+    },
+
     async runCodeBlock(e: { dataset: { execId: string; parentUuid: string } }) {
       const { execId, parentUuid } = e.dataset
       const s = execState.get(execId)
