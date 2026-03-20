@@ -121,7 +121,9 @@ function renderExecUI(execId: string): void {
 
   const running = s.running
   const btnClass = running ? 'ecb-run-btn ecb-running' : 'ecb-run-btn'
-  const btnIcon = running ? '■' : '▶'
+  const btnIcon = running
+    ? '<span class="ecb-icon-stop"></span>'
+    : '<span class="ecb-icon-play"></span>'
   const btnHandler = running ? 'stopCodeBlock' : 'runCodeBlock'
   const btnTitle = running ? 'STOP execution' : 'Run code block'
 
@@ -199,15 +201,29 @@ const STYLES = `
     border: none;
     background: #22863a;
     color: #fff;
-    font-size: 12px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0;
-    line-height: 1;
     transition: background 0.15s ease;
     user-select: none;
+  }
+
+  .ecb-icon-play {
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 7px 0 7px 13px;
+    border-color: transparent transparent transparent #ffffff;
+    margin-left: 2px;
+  }
+
+  .ecb-icon-stop {
+    width: 12px;
+    height: 12px;
+    background: #ffffff;
+    border-radius: 1px;
   }
 
   .ecb-run-btn:hover:not(:disabled) {
