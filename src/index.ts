@@ -124,7 +124,6 @@ function renderExecUI(execId: string): void {
   const btnIcon = running ? '■' : '▶'
   const btnHandler = running ? 'stopCodeBlock' : 'runCodeBlock'
   const btnTitle = running ? 'STOP execution' : 'Run code block'
-  const outId = `ecb-out-${execId}`
 
   let outputContent: string
   if (s.output === '') {
@@ -150,24 +149,8 @@ function renderExecUI(execId: string): void {
           data-parent-uuid="${s.parentUuid}"
           title="${btnTitle}"
         >${btnIcon}</button>
-        <div class="ecb-output" id="${outId}">${outputContent}</div>
+        <div class="ecb-output">${outputContent}</div>
       </div>
-      <script>
-      (function() {
-        var out = document.getElementById('${outId}');
-        if (!out) return;
-        window.__ecbScroll = window.__ecbScroll || {};
-        if (window.__ecbScroll['${execId}'] !== false) {
-          out.scrollTop = out.scrollHeight;
-        }
-        if (out.__ecbListener) return;
-        out.__ecbListener = true;
-        out.addEventListener('scroll', function() {
-          window.__ecbScroll['${execId}'] =
-            out.scrollTop + out.clientHeight >= out.scrollHeight - 10;
-        }, { passive: true });
-      })();
-      <\/script>
     `,
   })
 }
@@ -268,9 +251,10 @@ const STYLES = `
     font-size: 12px;
     line-height: 1.5;
     color: #d4d4d4;
-    white-space: pre-wrap;
     word-break: break-all;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column-reverse;
   }
 
   .ecb-output-error {
@@ -284,6 +268,7 @@ const STYLES = `
 
   .ecb-text {
     display: block;
+    white-space: pre-wrap;
   }
 
   .ecb-exit-badge {

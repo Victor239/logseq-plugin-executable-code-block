@@ -25,12 +25,10 @@ wss.on('connection', (ws) => {
     const { id, type, code } = msg
     if (!id) return
 
-    // Handle kill request (SIGINT)
+    // Handle kill request
     if (type === 'kill') {
       const proc = procs.get(id)
-      if (proc) {
-        try { proc.kill('SIGINT') } catch (_) {}
-      }
+      if (proc) killProc(proc)
       return
     }
 
@@ -39,7 +37,7 @@ wss.on('connection', (ws) => {
     // Kill any existing process for this id
     const existing = procs.get(id)
     if (existing) {
-      try { existing.kill() } catch (_) {}
+      killProc(existing)
       procs.delete(id)
     }
 
@@ -49,7 +47,7 @@ wss.on('connection', (ws) => {
 
     let proc
     try {
-      proc = spawn(shell, args, { env: process.env })
+      proc = spawn(shell, args, { env: process.env, detached: !isWindows })
     } catch (err) {
       send(ws, { id, type: 'stderr', data: `Failed to spawn shell: ${err.message}\n` })
       send(ws, { id, type: 'exit', code: 1 })
@@ -81,11 +79,27 @@ wss.on('connection', (ws) => {
   ws.on('close', () => {
     // Kill all processes when client disconnects
     for (const proc of procs.values()) {
-      try { proc.kill() } catch (_) {}
+      killProc(proc)
     }
     procs.clear()
   })
 })
+
+/**
+ * Kill a process and its entire process group (Unix) or just the process (Windows).
+ * @param {import('child_process').ChildProcess} proc
+ */
+function killProc(proc) {
+  try {
+    if (process.platform !== 'win32' && proc.pid) {
+      process.kill(-proc.pid, 'SIGTERM')
+    } else {
+      proc.kill()
+    }
+  } catch (_) {
+    try { proc.kill() } catch (_) {}
+  }
+}
 
 /**
  * @param {import('ws').WebSocket} ws
